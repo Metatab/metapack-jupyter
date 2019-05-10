@@ -1,11 +1,18 @@
-# -*- coding: utf-8 -*-
-from pkg_resources import get_distribution, DistributionNotFound
+# Copyright (c) 2016 Civic Knowledge. This file is licensed under the terms of the
+# Revised BSD License, included in this distribution as LICENSE
 
-try:
-    # Change here if project is renamed and does not equal the package name
-    dist_name = 'metapack-jupyter'
-    __version__ = get_distribution(dist_name).version
-except DistributionNotFound:
-    __version__ = 'unknown'
-finally:
-    del get_distribution, DistributionNotFound
+"""Support for IPython and Python kernels in Jupyter Notebooks"""
+
+from .metapack import MetapackExporter
+from .ipython import open_package, open_source_package
+
+
+def init():
+    """Initialize features that are normally initialized in the CLI"""
+
+    from metapack.appurl import SearchUrl
+    import metapack as mp
+    from os import environ
+
+    SearchUrl.initialize()  # This makes the 'index:" urls work
+    mp.Downloader.context.update(environ)  # Allows resolution of environmental variables in urls
