@@ -7,9 +7,9 @@ Functions for converting Jupyter notebooks
 import nbformat
 from metapack import MetapackDoc
 from metapack.cli.core import prt, err
-from metapack.jupyter.core import logger, edit_notebook, get_cell_source, set_cell_source
-from metapack.jupyter.exporters import NotebookExecutor, DocumentationExporter
-from metapack.jupyter.preprocessors import ExtractInlineMetatabDoc
+from metapack_jupyter.core import logger, edit_notebook, get_cell_source, set_cell_source
+from metapack_jupyter.exporters import NotebookExecutor, DocumentationExporter
+from metapack_jupyter.preprocessors import ExtractInlineMetatabDoc
 from metapack.util import ensure_dir, copytree
 from metatab import DEFAULT_METATAB_FILE
 from nbconvert.writers import FilesWriter
