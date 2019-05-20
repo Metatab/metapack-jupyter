@@ -11,9 +11,11 @@ import requests
 from metapack import Downloader, MetapackDoc
 from metapack.cli.core import list_rr, warn, prt, err, MetapackCliMemo, write_doc
 
-from metapack.jupyter.core import edit_notebook, set_cell_source
+from metapack_jupyter.core import edit_notebook, set_cell_source
 from metapack.util import ensure_dir
 from os.path import dirname, basename, exists, splitext
+from .hugo import  convert_hugo
+from .wordpress import convert_wordpress
 
 downloader = Downloader.get_instance()
 
@@ -47,7 +49,7 @@ def notebook(subparsers):
                       help="Path or URL to a metatab file. If not provided, defaults to 'metadata.csv' ")
 
     ##
-    ## Build Group
+    ## Convert group
 
     cmdp = cmdsp.add_parser('convert', help='Convert to other formats')
     cmdp.set_defaults(run_command=convert_cmd)
@@ -56,10 +58,11 @@ def notebook(subparsers):
                       help='Write images and Markdown into a Hugo static site directory. or use '
                            'METAPACK_HUGO_DIR env var')
 
-    cmdp.add_argument('-n', '--notebook', default=False,  action='store_true',
-                      help='Convert a filesystem source package into a notebook format. ')
+    cmdp.add_argument('-w', '--wordpress',
+                      help="Write images and html into a directory, for publication to Wordpress. "
+                           "( For testing; you probably want 'mp wp' to publish to Wordpress ")
 
-    cmdp.add_argument('metatabfile', nargs='?',
+    cmdp.add_argument('notebook',
                       help="Path or URL to a metatab file. If not provided, defaults to 'metadata.csv' ")
 
 
@@ -79,30 +82,14 @@ def new_cmd(args):
 
 
 def convert_cmd(args):
-    from metapack.jupyter.convert import convert_hugo
 
-    m = MetapackCliMemo(args, downloader)
 
-    if False:  # args.package:
-        convert_notebook(args.notebook)
+    if args.wordpress:
+        convert_wordpress(args.notebook, args.wordpress)
 
-    elif False:  # args.documentation:
-        convert_documentation(args.notebook)
-
-    elif False:  # args.metatab:
-        doc = extract_metatab(args.notebook)
-
-        if args.lines:
-            for line in doc.lines:
-                print(": ".join(line))
-        else:
-            print(doc.as_csv())
-
-    elif args.hugo:
+    if args.hugo:
         convert_hugo(args.notebook, args.hugo)
 
-    elif args.notebook:
-        convert_metatab_notebook(m)
 
 def write_notebook(m):
     # Get the EDA notebook file from Github
@@ -157,7 +144,7 @@ def write_eda_notebook(m):
 
 
 def write_metatab_notebook(m):
-    from metapack.jupyter.convert import write_metatab_notebook as _write_metatab_notebook
+    from metapack_jupyter.convert import write_metatab_notebook as _write_metatab_notebook
 
     print (m.doc.description)
 

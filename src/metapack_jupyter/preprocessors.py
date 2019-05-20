@@ -6,17 +6,79 @@ NBConvert preprocessors
 """
 
 from textwrap import dedent
-
+import re
 from IPython.core.magic_arguments import (parse_argstring)
-from nbconvert.preprocessors import Preprocessor
-from nbformat.notebooknode import from_dict
-from traitlets import Unicode, List, Dict
-
 from metapack import MetapackDoc
 from metatab import TermParser
 from metatab.rowgenerators import TextRowGenerator
+from nbconvert.preprocessors import ExtractOutputPreprocessor
+from nbconvert.preprocessors import Preprocessor
+from nbformat.notebooknode import from_dict
 from rowgenerators import parse_app_url
+from traitlets import Unicode, List, Dict
+
 from .magic import MetatabMagic
+
+
+class AttachementOutputExtractor(ExtractOutputPreprocessor):
+    """Extract outputs from a notebook
+
+
+    """
+
+    def preprocess(self, nb, resources):
+        return super().preprocess(nb, resources)
+
+    def preprocess(self, nb, resources):
+
+        for index, cell in enumerate(nb.cells):
+            nb.cells[index], resources = self.preprocess_cell(cell, resources, index)
+
+        return nb, resources
+
+    def preprocess_cell(self, cell, resources, cell_index):
+        """Also extracts attachments"""
+        from nbformat.notebooknode import NotebookNode
+
+        attach_names = []
+
+        # Just move the attachment into an output
+
+        for k, attach in cell.get('attachments', {}).items():
+            for mime_type in self.extract_output_types:
+                if mime_type in attach:
+
+                    if not 'outputs' in cell:
+                        cell['outputs'] = []
+
+                    o = NotebookNode({
+                        'data': NotebookNode({mime_type: attach[mime_type]}),
+                        'metadata': NotebookNode({
+                            'filenames': {mime_type: k}  # Will get re-written
+                        }),
+                        'output_type': 'display_data'
+                    })
+
+                    cell['outputs'].append(o)
+
+                    attach_names.append((mime_type, k))
+
+        nb, resources = super().preprocess_cell(cell, resources, cell_index)
+
+        output_names = list(resources.get('outputs', {}).keys())
+
+        if attach_names:
+            # We're going to assume that attachments are only on Markdown cells, and Markdown cells
+            # can't generate output, so all of the outputs were added.
+
+            # reverse + zip matches the last len(attach_names) elements from output_names
+
+            for output_name, (mimetype, an) in zip(reversed(output_names), reversed(attach_names)):
+                # We'll post process to set the final output directory
+                cell.source = re.sub('\(attachment:{}\)'.format(an),
+                                     '(__IMGDIR__/{})'.format(output_name), cell.source)
+
+        return nb, resources
 
 
 class RemoveDocsFromImages(Preprocessor):
@@ -150,7 +212,7 @@ class ExtractInlineMetatabDoc(ExtractMetatabTerms):
 
     def preprocess_cell(self, cell, resources, index):
         import re
-        from metatab.generate import TextRowGenerator
+        from metatab.rowgenerators import TextRowGenerator
 
         if not self.extra_terms:
             self.extra_terms = []
@@ -207,7 +269,7 @@ class ExtractFinalMetatabDoc(Preprocessor):
     doc = None
 
     def preprocess_cell(self, cell, resources, index):
-        from metatab.generate import TextRowGenerator
+        from metatab.rowgenerators import TextRowGenerator
 
         if cell['metadata'].get('mt_final_metatab'):
             if cell['outputs']:
@@ -435,16 +497,15 @@ class AddEpilog(Preprocessor):
 
         return nb, resources
 
+
 class AddProlog(Preprocessor):
     """Add final cells that writes the Metatab file, materializes datasets, etc.  """
 
     env = Dict(help='Initial local variables. Must be primitive types').tag(config=True)
 
     def preprocess(self, nb, resources):
-        from datetime import datetime
-
-        source = '\n'.join( '{}={}'.format(k,repr(v)) for k,v in self.env.items()
-                            if k and isinstance(v,(int,float,str)))
+        source = '\n'.join('{}={}'.format(k, repr(v)) for k, v in self.env.items()
+                           if k and isinstance(v, (int, float, str)))
 
         nb.cells = [
                        from_dict({
@@ -454,7 +515,7 @@ class AddProlog(Preprocessor):
                            'execution_count': None,
                            'source': source
                        }),
-                    # Mark this notebook as being run in a build, which can change the behaviour of some magics
+                       # Mark this notebook as being run in a build, which can change the behaviour of some magics
                        from_dict({
                            'cell_type': 'code',
                            'outputs': [],
@@ -466,7 +527,6 @@ class AddProlog(Preprocessor):
                    ] + nb.cells
 
         return nb, resources
-
 
 
 class OrganizeMetadata(Preprocessor):
@@ -506,9 +566,9 @@ class OrganizeMetadata(Preprocessor):
         # in the data, which the Doc interface fixes.
         nb.metadata['metatab']['name'] = self.doc.name
         nb.metadata['metatab']['description'] = self.doc.description if self.doc.identifier else self.doc.description
-        nb.metadata['metatab']['identifier'] = self.doc.identifier if self.doc.identifier else  self.doc.identifier
+        nb.metadata['metatab']['identifier'] = self.doc.identifier if self.doc.identifier else self.doc.identifier
 
-        if not 'identifier' in nb.metadata['frontmatter'] and nb.metadata['metatab']['identifier'] :
+        if not 'identifier' in nb.metadata['frontmatter'] and nb.metadata['metatab']['identifier']:
             nb.metadata['frontmatter']['identifier'] = nb.metadata['metatab']['identifier']
 
         return nb, resources
