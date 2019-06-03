@@ -16,6 +16,7 @@ from metapack.util import ensure_dir
 from os.path import dirname, basename, exists, splitext
 from .hugo import  convert_hugo
 from .wordpress import convert_wordpress
+from pathlib import Path
 
 downloader = Downloader.get_instance()
 
@@ -127,14 +128,14 @@ def write_eda_notebook(m):
     r = requests.get(url, allow_redirects=True)
     r.raise_for_status()
 
-    nb_path = 'notebooks/{}-{}.ipynb'.format(splitext(basename(url))[0], resource.name)
+    nb_path = Path('notebooks/{}-{}.ipynb'.format(splitext(basename(url))[0], resource.name))
 
-    ensure_dir(dirname(nb_path))
+    ensure_dir(nb_path.parent)
 
-    if exists(nb_path):
+    if nb_path.exists():
         err("Notebook {} already exists".format(nb_path))
 
-    with open(nb_path, 'wb') as f:
+    with nb_path.open('wb') as f:
         f.write(r.content)
 
     prt('Wrote {}'.format(nb_path))

@@ -25,10 +25,6 @@ class JupyterNotebookUrl(FileUrl):
         return self
 
     def target_dataframe(self):
-        if self._target_file:
-            return self._target_file
+        return self.target_file
 
-        if self.fragment[0]:
-            return self.fragment[0]
 
-        return None
