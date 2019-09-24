@@ -21,7 +21,7 @@ from IPython.core.magic_arguments import (argument, magic_arguments,
 from IPython.display import display, HTML, Latex
 from metapack import MetapackDoc
 from metapack.appurl import MetapackPackageUrl
-from metapack.cli.core import process_schemas
+from metapack_build.core import process_schemas
 from metapack.html import bibliography, data_sources
 from metatab import TermParser
 from metatab.rowgenerators import TextRowGenerator

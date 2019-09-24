@@ -2,10 +2,12 @@
 
 
 THIS_REV=$(shell python setup.py --version)
-NEXT_REV=$(shell python -c "import sys; import semantic_version; print( semantic_version.Version(sys.argv[1]).next_patch())" $(THIS_REV) )
-
+NEXT_REV=$(shell python -c "import sys; import semantic_version; \
+print( semantic_version.Version('.'.join(sys.argv[1].split('.')[:3])).next_patch()  )\
+" $(THIS_REV) )
 # Create a new revision
 rev:
+    got commit -a -m'Increment revision'
 	git tag $(NEXT_REV)
 
 showrev:

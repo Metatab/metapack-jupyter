@@ -190,7 +190,8 @@ def add_dataframe(df, name, pkg=None, description=''):
 
     """
     from warnings import warn
-    from metapack.cli.core import alt_col_name, type_map
+    from metapack.cli.core import type_map
+    from metapack_build.core import alt_col_name
     import numpy as np
 
     if name is None or df is None:

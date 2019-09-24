@@ -14,7 +14,7 @@ class JupyterNotebookUrl(FileUrl):
     match_priority = FileUrl.match_priority - 10
 
     def __init__(self, url=None, **kwargs):
-        kwargs['proto'] = 'ipynb'
+
         super().__init__(url, **kwargs)
 
     @classmethod

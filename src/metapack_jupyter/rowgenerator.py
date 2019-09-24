@@ -32,14 +32,30 @@ class JupyterNotebookSource(Source):
         self.doc = doc
 
     def start(self):
+
         pass
 
     def finish(self):
         pass
 
+    def _dataframes_in_this_notebook(self):
+        """List all of the dataframes in this notebook that will be used in the document, so
+        we can cache them"""
+
+        dataframes = []
+
+        for r in self.doc.resources():
+            if r.resolved_url.path == self.ref.path:
+                dataframes.append(r.resolved_url.target_file)
+
+
+        return dataframes
+
     def __iter__(self):
 
         self.start()
+
+        dataframes = self._dataframes_in_this_notebook()
 
         dr_name = get_materialized_data_cache(self.doc)
 
@@ -47,6 +63,9 @@ class JupyterNotebookSource(Source):
 
         # The first python notebook in the resources will get executed, cache the datafiles,
         # then the remaining ones will just use the caches data.
+
+        # This path is deleted at the start of each run, so each notebook should be executed once and only once
+        # per build
         if not exists(path):
 
             # The execute_notebook() function will add a cell with the '%mt_materialize' magic,
@@ -56,7 +75,7 @@ class JupyterNotebookSource(Source):
             if not self.ref.target_dataframe():
                 raise AppUrlError('Url did not specify a dataframe; use the "#" fragment ')
 
-            nb = execute_notebook(self.ref.path, dr_name, [self.ref.target_dataframe()], True, self.env)
+            nb = execute_notebook(self.ref.path, dr_name, dataframes, True, self.env)
 
         with open(path) as f:
             yield from reader(f)

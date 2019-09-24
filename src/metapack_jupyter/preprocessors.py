@@ -440,7 +440,7 @@ class AddEpilog(Preprocessor):
     def preprocess(self, nb, resources):
         from datetime import datetime
 
-        # Well, now we adding prolog in the epilog ...
+        # Well, now we are adding prolog in the epilog ...
         nb.cells = [
                        from_dict({
                            'cell_type': 'code',
@@ -462,6 +462,7 @@ class AddEpilog(Preprocessor):
                 'execution_count': None,
                 'source': '\n'.join("%mt_materialize {} '{}' ".format(df, self.pkg_dir) for df in self.dataframes)
             }))
+
 
         nb.cells.append(from_dict({
             'cell_type': 'code',
