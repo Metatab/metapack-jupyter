@@ -20,7 +20,7 @@ from pathlib import Path
 
 downloader = Downloader.get_instance()
 
-
+foobar 
 def notebook(subparsers):
     parser = subparsers.add_parser(
         'notebook',
