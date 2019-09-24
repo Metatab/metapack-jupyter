@@ -6,21 +6,29 @@ CLI program for managing packages
 """
 
 import sys
+from os.path import basename, dirname, exists, splitext
+from pathlib import Path
 
 import requests
 from metapack import Downloader, MetapackDoc
-from metapack.cli.core import list_rr, warn, prt, err, MetapackCliMemo, write_doc
+from metapack.cli.core import (
+    MetapackCliMemo,
+    err,
+    list_rr,
+    prt,
+    warn,
+    write_doc
+)
+from metapack.util import ensure_dir
 
 from metapack_jupyter.core import edit_notebook, set_cell_source
-from metapack.util import ensure_dir
-from os.path import dirname, basename, exists, splitext
-from .hugo import  convert_hugo
+
+from .hugo import convert_hugo
 from .wordpress import convert_wordpress
-from pathlib import Path
 
 downloader = Downloader.get_instance()
 
-foobar 
+
 def notebook(subparsers):
     parser = subparsers.add_parser(
         'notebook',
@@ -29,8 +37,8 @@ def notebook(subparsers):
 
     parser.set_defaults(handler=None)
 
-    ##
-    ## New Notebooks
+    #
+    # New Notebooks
 
     cmdsp = parser.add_subparsers(help='sub-command help')
 
@@ -49,8 +57,8 @@ def notebook(subparsers):
     cmdp.add_argument('metatabfile', nargs='?',
                       help="Path or URL to a metatab file. If not provided, defaults to 'metadata.csv' ")
 
-    ##
-    ## Convert group
+    #
+    # Convert group
 
     cmdp = cmdsp.add_parser('convert', help='Convert to other formats')
     cmdp.set_defaults(run_command=convert_cmd)
@@ -83,8 +91,6 @@ def new_cmd(args):
 
 
 def convert_cmd(args):
-
-
     if args.wordpress:
         convert_wordpress(args.notebook, args.wordpress)
 
@@ -147,12 +153,12 @@ def write_eda_notebook(m):
 def write_metatab_notebook(m):
     from metapack_jupyter.convert import write_metatab_notebook as _write_metatab_notebook
 
-    print (m.doc.description)
+    print(m.doc.description)
 
     _write_metatab_notebook(m.doc)
 
-def get_readme(m):
 
+def get_readme(m):
     for t in m.doc.find('Root.Documentation', title='README'):
         print(t.resolved_url)
 
@@ -163,25 +169,23 @@ def get_readme(m):
 
 
 def convert_metatab_notebook(m):
-
     m.doc['Documentation'].get_or_new_term('Root.Readme').value = get_readme(m)
 
     return
 
-
-    source = Path(source)
+    source = None  # Path(source)
 
     if source.suffix == '.csv':
         dest = source.with_suffix('.ipynb')
         doc = MetapackDoc(source)
         doc.ensure_identifier()
         doc.update_name(create_term=True)
-        _write_metatab_notebook(doc, dest)
+        # _write_metatab_notebook(doc, dest)
 
     elif source.suffix == '.ipynb':
         dest = source.with_suffix('.csv')
 
-        doc = extract_notebook_metatab(source)
+        doc = None  # extract_notebook_metatab(source)
         doc.ensure_identifier()
         doc.update_name(create_term=True)
         write_doc(doc, dest)
