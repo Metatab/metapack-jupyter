@@ -7,7 +7,7 @@ print( semantic_version.Version('.'.join(sys.argv[1].split('.')[:3])).next_patch
 " $(THIS_REV) )
 # Create a new revision
 rev:
-	git commit -a -m'Increment revision'
+	#git commit -a -m'Increment revision'
 	git tag $(NEXT_REV)
 
 showrev:
