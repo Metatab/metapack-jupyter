@@ -5,19 +5,16 @@
 NBConvert preprocessors
 """
 
-from textwrap import dedent
 import re
-from IPython.core.magic_arguments import (parse_argstring)
+from textwrap import dedent
+
 from metapack import MetapackDoc
 from metatab import TermParser
 from metatab.rowgenerators import TextRowGenerator
-from nbconvert.preprocessors import ExtractOutputPreprocessor
-from nbconvert.preprocessors import Preprocessor
+from nbconvert.preprocessors import ExtractOutputPreprocessor, Preprocessor
 from nbformat.notebooknode import from_dict
 from rowgenerators import parse_app_url
-from traitlets import Unicode, List, Dict
-
-from .magic import MetatabMagic
+from traitlets import Dict, List, Unicode
 
 
 class AttachementOutputExtractor(ExtractOutputPreprocessor):
@@ -26,15 +23,15 @@ class AttachementOutputExtractor(ExtractOutputPreprocessor):
 
     """
 
-    def preprocess(self, nb, resources):
-        return super().preprocess(nb, resources)
+    #  def preprocess(self, nb, resources):
+    #     return super().preprocess(nb, resources)
 
     def preprocess(self, nb, resources):
 
         for index, cell in enumerate(nb.cells):
             nb.cells[index], resources = self.preprocess_cell(cell, resources, index)
 
-        return nb, resources
+        return nb, resources  # return super().preprocess(nb, resources) ??
 
     def preprocess_cell(self, cell, resources, cell_index):
         """Also extracts attachments"""
@@ -48,7 +45,7 @@ class AttachementOutputExtractor(ExtractOutputPreprocessor):
             for mime_type in self.extract_output_types:
                 if mime_type in attach:
 
-                    if not 'outputs' in cell:
+                    if 'outputs' not in cell:
                         cell['outputs'] = []
 
                     o = NotebookNode({
@@ -75,7 +72,7 @@ class AttachementOutputExtractor(ExtractOutputPreprocessor):
 
             for output_name, (mimetype, an) in zip(reversed(output_names), reversed(attach_names)):
                 # We'll post process to set the final output directory
-                cell.source = re.sub('\(attachment:{}\)'.format(an),
+                cell.source = re.sub(r'\(attachment:{}\)'.format(an),
                                      '(__IMGDIR__/{})'.format(output_name), cell.source)
 
         return nb, resources
@@ -89,7 +86,7 @@ class RemoveDocsFromImages(Preprocessor):
 
         for o in cell.get('outputs', {}):
 
-            if not 'metadata' in o:
+            if 'metadata' not in o:
                 continue
 
             image_file = o.get('metadata', {}).get('filenames', {}).get('image/png')
@@ -343,9 +340,9 @@ class RemoveMetatab(Preprocessor):
                 continue
 
             if source.startswith('%%metatab'):
-                lines = source.splitlines()  # resplit to remove leading blank lines
+                #  lines = source.splitlines()  # resplit to remove leading blank lines
 
-                args = parse_argstring(MetatabMagic.metatab, lines[0].replace('%%metatab', ''))
+                #  args = parse_argstring(MetatabMagic.metatab, lines[0].replace('%%metatab', ''))
 
                 cell.source = "%mt_open_package\n"
                 cell.outputs = []
@@ -447,8 +444,7 @@ class AddEpilog(Preprocessor):
                            'outputs': [],
                            'metadata': {'': True, 'prolog': True},
                            'execution_count': None,
-                           'source': ("#{}\n".format(datetime.now())) +
-                                     "%load_ext metapack_jupyter.magic"
+                           'source': ("#{}\n".format(datetime.now())) + "%load_ext metapack_jupyter.magic"
                        })
                    ] + nb.cells
 
@@ -462,7 +458,6 @@ class AddEpilog(Preprocessor):
                 'execution_count': None,
                 'source': '\n'.join("%mt_materialize {} '{}' ".format(df, self.pkg_dir) for df in self.dataframes)
             }))
-
 
         nb.cells.append(from_dict({
             'cell_type': 'code',
@@ -552,7 +547,7 @@ class OrganizeMetadata(Preprocessor):
         from metapack.util import slugify
         import uuid
 
-        r = super().preprocess(nb, resources)
+        # r = super().preprocess(nb, resources)
 
         nb.cells = [cell for cell in nb.cells if cell.source]
 
@@ -569,7 +564,7 @@ class OrganizeMetadata(Preprocessor):
         nb.metadata['metatab']['description'] = self.doc.description if self.doc.identifier else self.doc.description
         nb.metadata['metatab']['identifier'] = self.doc.identifier if self.doc.identifier else self.doc.identifier
 
-        if not 'identifier' in nb.metadata['frontmatter'] and nb.metadata['metatab']['identifier']:
+        if 'identifier' not in nb.metadata['frontmatter'] and nb.metadata['metatab']['identifier']:
             nb.metadata['frontmatter']['identifier'] = nb.metadata['metatab']['identifier']
 
         return nb, resources
@@ -582,7 +577,12 @@ class OrganizeMetadata(Preprocessor):
 
         if 'frontmatter' in tags:
             d = yaml.load(cell['source'])
-            self.front_matter.update(d)
+            try:
+                self.front_matter.update(d)
+            except ValueError:
+                print("!!!!", d)
+                raise
+
             cell.source = ''
 
         if 'metadata' in tags:
@@ -603,11 +603,11 @@ class OrganizeMetadata(Preprocessor):
         if 'hide' in tags:
             cell['metadata']['show_input'] = 'hide'
 
-        if cell.cell_type == 'markdown' and re.match('\#\s', cell.source.strip()):
+        if cell.cell_type == 'markdown' and re.match(r'\#\s', cell.source.strip()):
             # Extract the first level 1 heading as the title, if a title isn't already defined
-            m = re.match('\s*\#\s*(.*)$', cell.source.strip())
+            m = re.match(r'\s*\#\s*(.*)$', cell.source.strip())
             if m and not self.alt_title:
-                if not 'title' in self.front_matter:
+                if 'title' not in self.front_matter:
                     self.front_matter['title'] = m.groups()[0]
                     cell.source = ''
 

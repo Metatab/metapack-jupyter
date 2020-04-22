@@ -8,16 +8,16 @@
 <!-- /wp:paragraph -->
 {%- endfor -%}
 {%- if nb.metadata.frontmatter.description -%}
-<!-- wp:paragraph -->
-<p><em>{{ nb.metadata.frontmatter.description }}</em></p>
+<!-- wp:paragraph {"className":"metapack-description"} -->
+<p class="metapack-description" ><em>{{ nb.metadata.frontmatter.description }}</em></p>
 <!-- /wp:paragraph -->
 {% endif %}
 {%- if nb.metadata.frontmatter.github -%}
 <!-- wp:button {"backgroundColor":"cyan-bluish-gray","className":"is-style-squared"} -->
 <div class="wp-block-button is-style-squared">
-<a class="wp-block-button__link has-background has-cyan-bluish-gray-background-color" 
+<a class="wp-block-button__link has-background has-cyan-bluish-gray-background-color"
    href="{{ nb.metadata.frontmatter.github }}">
- <code>[icon name="github" class="icon-2x"]</code> 
+ <code>[icon name="github" class="icon-2x"]</code>
  Full notebook on github<br></a>
  </div>
 <!-- /wp:button -->
