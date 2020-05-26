@@ -340,9 +340,9 @@ class RemoveMetatab(Preprocessor):
                 continue
 
             if source.startswith('%%metatab'):
-                #  lines = source.splitlines()  # resplit to remove leading blank lines
-
-                #  args = parse_argstring(MetatabMagic.metatab, lines[0].replace('%%metatab', ''))
+                # lines = source.splitlines()  # resplit to remove leading blank lines
+                raise NotImplementedError('Following line seems not to work, so maybe never get here')
+                # args = parse_argstring(MetatabMagic.metatab, lines[0].replace('%%metatab', ''))
 
                 cell.source = "%mt_open_package\n"
                 cell.outputs = []
@@ -547,7 +547,7 @@ class OrganizeMetadata(Preprocessor):
         from metapack.util import slugify
         import uuid
 
-        # r = super().preprocess(nb, resources)
+        super().preprocess(nb, resources)
 
         nb.cells = [cell for cell in nb.cells if cell.source]
 

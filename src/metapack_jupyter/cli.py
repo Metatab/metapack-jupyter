@@ -51,8 +51,7 @@ def notebook(subparsers):
     cmdp.add_argument('-E', '--eda', action='store_true', default=False,
                       help='Create an EDA notebook for a resource')
 
-    cmdp.add_argument('-b', '--notebook', action='store_true', default=False,
-                      help='Create a new, blank notebook')
+    cmdp.add_argument('-n', '--new-notebook', help='Create a new, blank notebook')
 
     cmdp.add_argument('metatabfile', nargs='?',
                       help="Path or URL to a metatab file. If not provided, defaults to 'metadata.csv' ")
@@ -83,7 +82,7 @@ def new_cmd(args):
     if m.args.eda:
         write_eda_notebook(m)
 
-    elif m.args.notebook:
+    elif m.args.new_notebook:
         write_notebook(m)
 
     elif m.args.metatab:
@@ -106,7 +105,9 @@ def write_notebook(m):
     r = requests.get(url, allow_redirects=True)
     r.raise_for_status()
 
-    nb_path = 'notebooks/new-notebook.ipynb'
+    p = Path(m.args.new_notebook)
+
+    nb_path = f'notebooks/{p.stem}.ipynb'
 
     ensure_dir(dirname(nb_path))
 
