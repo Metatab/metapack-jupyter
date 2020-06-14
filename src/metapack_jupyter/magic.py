@@ -10,32 +10,41 @@ jupyter nbextension install --py metatab.jupyter.magic
 
 from __future__ import print_function
 
-import sys
-
 import logging
 import os
+import sys
+from os import getcwd, makedirs
+from os.path import abspath, dirname, exists, join, normpath
+from warnings import warn
+
 from IPython import get_ipython
-from IPython.core.magic import Magics, magics_class, line_magic, cell_magic, line_cell_magic
-from IPython.core.magic_arguments import (argument, magic_arguments,
-                                          parse_argstring)
-from IPython.display import display, HTML, Latex
+from IPython.core.magic import (
+    Magics,
+    cell_magic,
+    line_cell_magic,
+    line_magic,
+    magics_class
+)
+from IPython.core.magic_arguments import (
+    argument,
+    magic_arguments,
+    parse_argstring
+)
+from IPython.display import HTML, Latex, display
 from metapack import MetapackDoc
 from metapack.appurl import MetapackPackageUrl
-from metapack_build.core import process_schemas
 from metapack.html import bibliography, data_sources
+from metapack_build.core import process_schemas
 from metatab import TermParser
 from metatab.rowgenerators import TextRowGenerator
-from os import makedirs, getcwd
-from os.path import join, abspath, dirname, exists, normpath
 from rowgenerators import Downloader, parse_app_url
-from warnings import warn
 
 logger = logging.getLogger('user')
 logger_err = logging.getLogger('cli-errors')
 doc_logger = logging.getLogger('doc')
 debug_logger = logging.getLogger('debug_logger')
 
-MT_DOC_VAR = 'mt_pkg' # Namespace name for the metatab document.
+MT_DOC_VAR = 'mt_pkg'  # Namespace name for the metatab document.
 
 
 def fill_categorical_na(df, nan_cat='NA'):
@@ -58,21 +67,16 @@ def fill_categorical_na(df, nan_cat='NA'):
 
     return df
 
+
 @magics_class
 class MetatabMagic(Magics):
-
     """Magics for using Metatab in Jupyter Notebooks
-
     """
-
-
 
     @property
     def mt_doc(self):
         """Return the current metatab document, which must be created with either %%metatab
         or %mt_load_package"""
-
-
 
         if MT_DOC_VAR not in self.shell.user_ns:
 
@@ -83,9 +87,9 @@ class MetatabMagic(Magics):
 
             inline_doc = self.shell.user_ns[MT_DOC_VAR]
 
-            if not 'Resources' in inline_doc:
+            if 'Resources' not in inline_doc:
                 inline_doc.new_section('Resources', ['Name', 'Description'])
-            if not 'Resources' in inline_doc:
+            if 'Resources' not in inline_doc:
                 inline_doc.new_section('References', ['Name', 'Description'])
 
             # Give all of the sections their standard args, to make the CSV versions of the doc
@@ -107,19 +111,17 @@ class MetatabMagic(Magics):
 
     def add_term_lines(self, text):
 
-
         assert 'root.reference' in TermParser.term_classes
 
-        tp = TermParser(TextRowGenerator(text), resolver= self.mt_doc.resolver, doc= self.mt_doc)
+        tp = TermParser(TextRowGenerator(text), resolver=self.mt_doc.resolver, doc=self.mt_doc)
 
         self.mt_doc.load_terms(tp)
-
 
     def clean_doc(self, doc):
 
         # Some sections have terms that are unique on Name
 
-        for sec in ['Resources','References','Bibliography', 'Schema', 'Contacts']:
+        for sec in ['Resources', 'References', 'Bibliography', 'Schema', 'Contacts']:
             try:
                 seen = set()
                 for t in doc[sec]:
@@ -162,8 +164,8 @@ class MetatabMagic(Magics):
         self.clean_doc(inline_doc)
 
         if args.show:
-            for l in inline_doc.lines:
-                print(': '.join(str(e) for e in l))
+            for line in inline_doc.lines:
+                print(': '.join(str(e) for e in line))
 
         if args.package_dir:
             self.shell.user_ns['_package_dir'] = abspath(join(getcwd(), args.package_dir))
@@ -171,11 +173,11 @@ class MetatabMagic(Magics):
             self.shell.user_ns['_package_dir'] = join(getcwd(), inline_doc.get_value('Root.Name'))
 
         if extant_identifier != inline_doc.get_value('Root.Identifier'):
-            print("Identifier updated.  Set 'Identifier: {}'  in document".format(inline_doc.get_value('Root.Identifier')))
+            print("Identifier updated.  Set 'Identifier: {}'  in document".format(
+                inline_doc.get_value('Root.Identifier')))
 
         if extant_name != inline_doc.get_value('Root.Name'):
             print("Name Changed. Set 'Name: {}'  in document".format(inline_doc.get_value('Root.Name')))
-
 
     @magic_arguments()
     @argument('-s', '--source', help='Force opening the source package', action='store_true')
@@ -185,12 +187,11 @@ class MetatabMagic(Magics):
 
         from metapack.jupyter.ipython import open_package
 
-        args = parse_argstring(self.mt_open_package, line)
+        parse_argstring(self.mt_open_package, line)
         self.shell.user_ns[MT_DOC_VAR] = open_package(self.shell.user_ns)
 
-
         if self.mt_doc.package_url:
-            u = parse_app_url(self.mt_doc.package_url)
+            parse_app_url(self.mt_doc.package_url)
 
     @line_magic
     def mt_import_terms(self, line):
@@ -238,7 +239,7 @@ class MetatabMagic(Magics):
 
     @magic_arguments()
     @argument('package_dir', help='Package directory')
-    @argument('--feather', help='Use feather for serialization', action='store_true' )
+    @argument('--feather', help='Use feather for serialization', action='store_true')
     @line_magic
     def mt_materialize_all(self, line):
         """Materialize all of the dataframes that has been previously added with mt_add_dataframe
@@ -258,7 +259,7 @@ class MetatabMagic(Magics):
         except KeyError:
             cache = Downloader.get_instance().cache
 
-        for df_name, ref in self.shell.user_ns.get('_material_dataframes',{}).items():
+        for df_name, ref in self.shell.user_ns.get('_material_dataframes', {}).items():
 
             u = parse_app_url(args.package_dir).join(ref)
 
@@ -270,7 +271,7 @@ class MetatabMagic(Magics):
             df = fill_categorical_na(self.shell.user_ns[args.df_name].copy())
 
             if args.feather:
-                path = path.replace('.csv','.feather')
+                path = path.replace('.csv', '.feather')
                 df.to_feather(path)
             else:
                 gen = PandasDataframeSource(u, df, cache=cache)
@@ -281,7 +282,7 @@ class MetatabMagic(Magics):
             materialized.append({
                 'df_name': df_name,
                 'path': path,
-                'ref':ref
+                'ref': ref
             })
 
         # Show information about the dataframes that were materialized, so it can be harvested later
@@ -299,6 +300,7 @@ class MetatabMagic(Magics):
         from rowgenerators import get_cache
         from rowgenerators.generator.python import PandasDataframeSource
         from metapack.util import ensure_dir
+        import numpy as np
         import csv
         from os.path import join
 
@@ -307,7 +309,6 @@ class MetatabMagic(Magics):
         dr = args.dir.strip("'")
 
         ensure_dir(dr)
-
 
         try:
             cache = self.mt_doc._cache
@@ -322,18 +323,22 @@ class MetatabMagic(Magics):
             # probably isn't.
             pass
 
-        gen = PandasDataframeSource(parse_app_url(path), df, cache=cache)
+        if len(df.index.names) == 1 and df.index.names[0] is None and df.index.dtype != np.dtype('O'):
+            # Simple index; ignore it.
+            df.to_csv(path, index=False)
+        else:
+            # PandasDataFrameSource has some more complex handling of multi-level indices
+            gen = PandasDataframeSource(parse_app_url(path), df, cache=cache)
 
-        with open(path, 'w') as f:
-            w = csv.writer(f)
-            w.writerows(gen)
+            with open(path, 'w') as f:
+                w = csv.writer(f)
+                w.writerows(gen)
 
         print(dumps({
             'df_name': args.df_name,
             'path': path,
 
         }, indent=4))
-
 
     @line_magic
     def mt_show_metatab(self, line):
@@ -342,16 +347,18 @@ class MetatabMagic(Magics):
         try:
             for line in self.mt_doc.lines:
 
-                if  line[1]: # Don't display "None"
+                if line[1]:  # Don't display "None"
                     print(': '.join(line))
         except KeyError:
             pass
 
     @magic_arguments()
-    @argument('-m','--materialize', help='Save the data for the dataframe during package conversion', action="store_true")
-    @argument('-n','--name', help='Metadata reference name of the dataframe')
-    @argument('-t','--title', help='Title of the dataframe')
-    @argument('-d', '--dump', help='Dump example schema for the dataframe. Implied when used as line magic', action="store_true")
+    @argument('-m', '--materialize', help='Save the data for the dataframe during package conversion',
+              action="store_true")
+    @argument('-n', '--name', help='Metadata reference name of the dataframe')
+    @argument('-t', '--title', help='Title of the dataframe')
+    @argument('-d', '--dump', help='Dump example schema for the dataframe. Implied when used as line magic',
+              action="store_true")
     @argument('--feather', help='Materialize with feather', action="store_true")
     @argument('dataframe_name', nargs=1, help='Variable name of the dataframe name')
     @line_cell_magic
@@ -372,7 +379,7 @@ class MetatabMagic(Magics):
 
         dataframe_name = args.dataframe_name[0]
 
-        if not '_material_dataframes' in self.shell.user_ns:
+        if '_material_dataframes' not in self.shell.user_ns:
             self.shell.user_ns['_material_dataframes'] = {}
 
         df = self.shell.user_ns[dataframe_name]
@@ -385,27 +392,26 @@ class MetatabMagic(Magics):
 
         cell_table = cell_doc.find_first('Root.Table')
 
-        if cell_table and ( args.name or args.title ):
+        if cell_table and (args.name or args.title):
             warn("The name and title arguments are ignored when the cell includes a Metatab table definition")
 
         if cell_table:
             name = cell_table.get_value('name')
-            title = cell_table.get_value('title','')
-            description = cell_table.get_value('description','')
+            title = cell_table.get_value('title', '')
+            description = cell_table.get_value('description', '')
         else:
             name = None
             title = ''
             description = ''
 
-
         if not name:
-            name = args.name or dataframe_name;
+            name = args.name or dataframe_name
 
         if not title:
             title = args.title or dataframe_name
 
         if not name:
-            warn("Name must be set with .name property, or --name option".format(args['<dataframe_name>']))
+            warn("Name must be set with .name property, or --name option")
             return
 
         title = title.strip("'").strip('"')
@@ -420,7 +426,7 @@ class MetatabMagic(Magics):
             self.shell.user_ns['_material_dataframes'][dataframe_name] = ref
 
         elif doc is not None:
-            ref = 'ipynb:notebooks/{}.ipynb#{}'.format( doc.as_version(None), dataframe_name)
+            ref = 'ipynb:notebooks/{}.ipynb#{}'.format(doc.as_version(None), dataframe_name)
 
         else:
             ref = None
@@ -429,12 +435,12 @@ class MetatabMagic(Magics):
 
         resource_term = None
 
-        ##
-        ## First, process the schema, extracting the columns from the dataframe.
-        ##
+        #
+        # First, process the schema, extracting the columns from the dataframe.
+        #
 
         if doc and ref:
-            if not 'Resources' in doc:
+            if 'Resources' not in doc:
                 doc.new_section('Resources')
 
             resource_term = doc['Resources'].get_or_new_term("Root.Datafile", ref)
@@ -450,15 +456,15 @@ class MetatabMagic(Magics):
             if not table:
                 table = doc['Schema'].find_first('Root.Table', name)
 
-        ##
-        ## Next, apply the names from  table description from the cell
-        ##
+        #
+        # Next, apply the names from  table description from the cell
+        #
 
         if cell_table:
 
-            cols_by_name = {c.name:c for c in cell_table.find('Table.Column') }
+            cols_by_name = {c.name: c for c in cell_table.find('Table.Column')}
 
-            for i,c in enumerate(table.find('Table.Column')):
+            for i, c in enumerate(table.find('Table.Column')):
 
                 cell_column = cols_by_name.get(c.name)
                 try:
@@ -475,22 +481,21 @@ class MetatabMagic(Magics):
                     c.description = cell_col_by_pos.description
                     c.name = cell_col_by_pos.name
 
-
         if args.dump and table:
             print("Table:", resource_term.name)
 
             if resource_term and resource_term.title:
                 print("Table.Title:", resource_term.get_value('title'))
-                print("Table.Description:", resource_term.get_value('description') if resource_term.get_value('description')  else '')
+                print("Table.Description:",
+                      resource_term.get_value('description') if resource_term.get_value('description') else '')
 
             for c in table.find('Table.Column'):
                 print("Table.Column:", c.name)
                 print("  .Datatype:", c.datatype)
-                print("  .Description:",  c.description or '')
+                print("  .Description:", c.description or '')
 
             if is_line:
                 print("\nCopy the above into the cell, and change to a cell magic, with '%%' ")
-
 
     @magic_arguments()
     @argument('--format', help="Format, html or latex. Defaults to 'all' ", default='all', nargs='?', )
@@ -509,7 +514,7 @@ class MetatabMagic(Magics):
                 mod = getattr(mod, comp)
             return mod
 
-        converters = [ import_converter(e) for e in args.converters ]
+        converters = [import_converter(e) for e in args.converters]
 
         if args.format == 'html' or args.format == 'all':
             display(HTML(bibliography(self.mt_doc, converters=converters, format='html')))
@@ -543,7 +548,7 @@ class MetatabMagic(Magics):
             display(Latex(data_sources(self.mt_doc, converters=converters, format='latex')))
 
     @magic_arguments()
-    @argument('lib_dir', help='Directory', nargs='?',)
+    @argument('lib_dir', help='Directory', nargs='?', )
     @line_magic
     def mt_lib_dir(self, line):
         """Declare a source code directory and add it to the sys path
@@ -579,7 +584,7 @@ class MetatabMagic(Magics):
 
         from os.path import splitext, basename
 
-        args = parse_argstring(self.mt_lib_dir, line) # Its a normal string
+        args = parse_argstring(self.mt_lib_dir, line)  # Its a normal string
 
         if not args.lib_dir:
             lib_dir = 'lib'
@@ -587,7 +592,7 @@ class MetatabMagic(Magics):
         else:
             lib_dir = args.lib_dir
 
-        if not '_lib_dirs' in self.shell.user_ns:
+        if '_lib_dirs' not in self.shell.user_ns:
             self.shell.user_ns['_lib_dirs'] = set()
 
         u = parse_app_url(lib_dir)
@@ -599,9 +604,9 @@ class MetatabMagic(Magics):
 
             lib_dir = normpath(lib_dir).lstrip('./')
 
-            for path in [ abspath(lib_dir), abspath(join('..',lib_dir))]:
+            for path in [abspath(lib_dir), abspath(join('..', lib_dir))]:
                 if exists(path) and path not in sys.path:
-                    sys.path.insert(0,path)
+                    sys.path.insert(0, path)
                     self.shell.user_ns['_lib_dirs'].add(lib_dir)
                     return
 
@@ -618,10 +623,10 @@ class MetatabMagic(Magics):
             lib_path = r.join(pkg_name).path
 
             if lib_path not in sys.path:
-                sys.path.insert(0,lib_path)
+                sys.path.insert(0, lib_path)
 
         # Assume anything else is a Metatab Reference term name
-        elif self.mt_doc.find_first('Root.Reference', name=lib_dir) or self.mt_doc.resource(lib_dir) :
+        elif self.mt_doc.find_first('Root.Reference', name=lib_dir) or self.mt_doc.resource(lib_dir):
 
             r = self.mt_doc.find_first('Root.Reference', name=lib_dir) or self.mt_doc.resource(lib_dir)
 
@@ -631,7 +636,6 @@ class MetatabMagic(Magics):
 
         else:
             logger.error("Can't find library directory: '{}' ".format(lib_dir))
-
 
     @line_magic
     def mt_show_libdirs(self, line):
@@ -644,27 +648,23 @@ class MetatabMagic(Magics):
             print(json.dumps([]))
 
 
-
 @magics_class
 class MetapackMagic(Magics):
-
     """Magics for using Metatab in Jupyter Notebooks
 
     """
 
     @magic_arguments()
-    @argument('dataframe_name',  help='Variable name of the dataframe name')
+    @argument('dataframe_name', help='Variable name of the dataframe name')
     @argument('--doc', help='Variable name of the document. Defaults to the local source package')
     @argument('--description', help='Description of the resource')
-    @argument('-r','--reset-index', action='store_true', help='Reset the dataframe index before adding')
+    @argument('-r', '--reset-index', action='store_true', help='Reset the dataframe index before adding')
     @line_magic
     def mp_add_dataframe(self, line, cell=''):
 
         from metapack.util import get_materialized_data_cache
         from .ipython import add_dataframe, open_source_package
         from json import dumps
-        from rowgenerators.generator.python import PandasDataframeSource
-        import csv
         from os.path import join
 
         args = parse_argstring(self.mp_add_dataframe, line)
@@ -674,17 +674,17 @@ class MetapackMagic(Magics):
         else:
             doc = open_source_package()
 
-        if self.shell.user_ns.get("METAPACK_BUILDING"): # var set by AddProlog
+        if self.shell.user_ns.get("METAPACK_BUILDING"):  # var set by AddProlog
             warn("Building, so materializing instead of adding to document")
 
             cache = get_materialized_data_cache(doc)
 
             path = join(cache, args.dataframe_name + ".csv")
             df = self.shell.user_ns[args.dataframe_name].fillna('')
-            
-            #gen = PandasDataframeSource(parse_app_url(path), df, cache=cache)
 
-            #with open(path, 'w') as f:
+            # gen = PandasDataframeSource(parse_app_url(path), df, cache=cache)
+
+            # with open(path, 'w') as f:
             #    w = csv.writer(f)
             #    w.writerows(gen)
 
@@ -713,7 +713,6 @@ def load_ipython_extension(ipython):
     # call the default constructor on it.
     ip.register_magics(MetatabMagic)
     ip.register_magics(MetapackMagic)
-
 
     # init_logging()
 

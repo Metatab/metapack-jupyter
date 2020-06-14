@@ -5,6 +5,8 @@
 Functions for executing Jupyter notebooks
 """
 
+from metapack.cli.core import debug_logger as logger
+
 from .exc import NotebookError
 
 
@@ -50,13 +52,15 @@ def execute_notebook(nb_path, pkg_dir, dataframes, write_notebook=False, env=Non
 
     _write_notebook(nb_path, root, ext, write_notebook)
 
+    logger.debug(f'Executing notebook {nb_path} in root {root} ')
+
     try:
         ep = ExecutePreprocessor(config=c)
 
         ep.timeout = 5*60
 
         nb, _ = ep.preprocess(nb, {'metadata': {'path': dirname(nb_path)}})
-    except (CellExecutionError, TimeoutError) as e:
+    except (CellExecutionError, TimeoutError):
         err_nb_path = join(dirname(nb_path), root + '-errors' + ext)
         with open(err_nb_path, 'w', encoding='utf8') as f:
             nbformat.write(nb, f)
