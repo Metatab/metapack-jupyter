@@ -8,13 +8,15 @@ Jupyter notebook row generators
 
 
 from csv import reader
-from metapack_jupyter.core import get_cell_source
-from metapack_jupyter.exec import execute_notebook
+from os.path import exists, join
+
 from metapack.util import get_materialized_data_cache
 from metatab.rowgenerators import TextRowGenerator
-from os.path import join, exists
 from rowgenerators import Source, SourceError
 from rowgenerators.exceptions import AppUrlError
+
+from metapack_jupyter.core import get_cell_source
+from metapack_jupyter.exec import execute_notebook
 
 
 class JupyterNotebookSource(Source):
@@ -66,6 +68,7 @@ class JupyterNotebookSource(Source):
 
         # This path is deleted at the start of each run, so each notebook should be executed once and only once
         # per build
+
         if not exists(path):
 
             # The execute_notebook() function will add a cell with the '%mt_materialize' magic,

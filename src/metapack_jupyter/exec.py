@@ -65,8 +65,8 @@ def execute_notebook(nb_path, pkg_dir, dataframes, write_notebook=False, env=Non
         with open(err_nb_path, 'w', encoding='utf8') as f:
             nbformat.write(nb, f)
 
-        raise CellExecutionError("Errors executing noteboook. See notebook at {} for details.\n{}"
-                                 .format(err_nb_path, ''))
+        raise #CellExecutionError("Errors executing noteboook. See notebook at {} for details.\n{}"
+               #                  .format(err_nb_path, ''))
 
     except ImportError as e:
         raise NotebookError("Failed to import a library required for notebook execution: {}".format(str(e)))
