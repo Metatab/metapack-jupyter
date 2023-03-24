@@ -10,7 +10,7 @@ from textwrap import dedent
 
 from metapack import MetapackDoc
 from metatab import TermParser
-from metatab.rowgenerators import TextRowGenerator
+from metatab.rowgen import TextRowGenerator
 from nbconvert.preprocessors import ExtractOutputPreprocessor, Preprocessor
 from nbformat.notebooknode import from_dict
 from rowgenerators import parse_app_url
@@ -19,7 +19,6 @@ from traitlets import Dict, List, Unicode
 
 class AttachementOutputExtractor(ExtractOutputPreprocessor):
     """Extract outputs from a notebook
-
 
     """
 

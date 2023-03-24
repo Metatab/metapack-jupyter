@@ -11,7 +11,7 @@ from csv import reader
 from os.path import exists, join
 
 from metapack.util import get_materialized_data_cache
-from metatab.rowgenerators import TextRowGenerator
+from metatab.rowgen import TextRowGenerator
 from rowgenerators import Source, SourceError
 from rowgenerators.exceptions import AppUrlError
 

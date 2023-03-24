@@ -36,7 +36,7 @@ from metapack.appurl import MetapackPackageUrl
 from metapack.html import bibliography, data_sources
 from metapack_build.core import process_schemas
 from metatab import TermParser
-from metatab.rowgenerators import TextRowGenerator
+from metatab.rowgen import TextRowGenerator
 from rowgenerators import Downloader, parse_app_url
 
 logger = logging.getLogger('user')
